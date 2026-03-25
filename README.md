@@ -128,7 +128,41 @@ src/
 
 ## 🚀 Getting Started
 
-### 1. Clone and install
+### Option A – Standalone HTML/CSS/JS (no npm required)
+
+These files work directly in any browser with **no build step**. Firebase is loaded via CDN.
+
+| File | Purpose |
+|---|---|
+| `login.html` | User login (email/password + Google) |
+| `admin-login.html` | **Admin-only** login with role verification |
+| `admin.html` | Admin panel dashboard |
+| `firebase-config.js` | Shared Firebase config (edit this file) |
+
+**Steps:**
+
+1. Open `firebase-config.js` and replace the placeholder values with your Firebase project config:
+
+```js
+const firebaseConfig = {
+  apiKey:            "YOUR_API_KEY",
+  authDomain:        "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId:         "YOUR_PROJECT_ID",
+  storageBucket:     "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId:             "YOUR_APP_ID",
+};
+```
+
+2. Open `login.html` via a local HTTP server — opening directly as `file://` will fail due to browser CORS restrictions. A quick option: `npx serve .` or `python3 -m http.server 8080`, then visit `http://localhost:8080/login.html`.
+
+3. To access the admin panel, navigate to `admin-login.html`. Only users with `role: "admin"`, `"super_admin"`, or `"moderator"` in Firestore are allowed in.
+
+---
+
+### Option B – React/Vite (full app with npm)
+
+#### 1. Clone and install
 
 ```bash
 git clone https://github.com/Harshitkashyap2027/AETHERX.git
@@ -136,7 +170,7 @@ cd AETHERX
 npm install
 ```
 
-### 2. Set up Firebase
+#### 2. Set up Firebase
 
 1. Create a project at [Firebase Console](https://console.firebase.google.com)
 2. Enable **Authentication** (Email/Password + Google)
@@ -149,7 +183,7 @@ cp .env.example .env
 # Fill in your Firebase config values
 ```
 
-### 3. Deploy Firestore rules
+#### 3. Deploy Firestore rules
 
 ```bash
 npm install -g firebase-tools
@@ -157,13 +191,13 @@ firebase login
 firebase deploy --only firestore:rules,storage
 ```
 
-### 4. Run locally
+#### 4. Run locally
 
 ```bash
 npm run dev
 ```
 
-### 5. Build for production
+#### 5. Build for production
 
 ```bash
 npm run build
@@ -182,26 +216,34 @@ firebase deploy --only hosting
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 18 + Vite |
-| Styling | TailwindCSS 3 |
-| Animations | Framer Motion |
-| Icons | React Icons (Ionicons 5) |
-| Backend | Firebase 10 |
+| Frontend (standalone) | **Vanilla HTML + CSS + JavaScript** |
+| Frontend (full app) | React 18 + Vite |
+| Styling (standalone) | Custom CSS (glassmorphism design) |
+| Styling (full app) | TailwindCSS 3 |
+| Backend | Firebase (CDN for standalone / npm for full app) |
 | Auth | Firebase Authentication |
 | Database | Cloud Firestore |
 | Storage | Firebase Storage |
-| Routing | React Router v6 |
-| Notifications | React Toastify |
+| Routing (full app) | React Router v6 |
 
 ## 📱 Admin Access
 
 To promote a user to admin, update their `role` field in Firestore manually:
 
 ```
-users/{uid}.role = "admin"  // or "super_admin"
+users/{uid}.role = "admin"         // admin access
+users/{uid}.role = "super_admin"   // super admin
+users/{uid}.role = "moderator"     // moderator
 ```
 
-Admin users see an "Admin Panel" link in the sidebar and can access `/admin`.
+**Standalone HTML flow:**
+- Regular users log in at `login.html`
+- Admins log in at a **separate page** → `admin-login.html`
+- `admin-login.html` verifies the Firebase role before granting access to `admin.html`
+- Regular users attempting to access admin pages are blocked and shown an access-denied screen
+
+**React/Vite flow:**
+- Admin users see an "Admin Panel" link in the sidebar and can access `/admin`
 
 ## 🔮 Roadmap
 
