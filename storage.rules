@@ -1,0 +1,63 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    function isValidMedia() {
+      return request.resource.contentType.matches('image/.*') ||
+             request.resource.contentType.matches('video/.*');
+    }
+
+    function isValidSize(maxMB) {
+      return request.resource.size < maxMB * 1024 * 1024;
+    }
+
+    // Avatar uploads (max 5MB)
+    match /avatars/{userId} {
+      allow read: if true;
+      allow write: if isOwner(userId) && isValidImage() && isValidSize(5);
+    }
+
+    // Cover photos (max 10MB)
+    match /covers/{userId} {
+      allow read: if true;
+      allow write: if isOwner(userId) && isValidImage() && isValidSize(10);
+    }
+
+    // Post media (max 50MB)
+    match /posts/{userId}/{filename} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId) && isValidMedia() && isValidSize(50);
+    }
+
+    // Project preview images (max 20MB)
+    match /projects/{userId}/{filename} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId) && isValidMedia() && isValidSize(20);
+    }
+
+    // Stories (max 50MB)
+    match /stories/{userId}/{filename} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId) && isValidMedia() && isValidSize(50);
+    }
+
+    // Chat media (max 25MB)
+    match /chat-media/{chatId}/{filename} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidMedia() && isValidSize(25);
+    }
+  }
+}
