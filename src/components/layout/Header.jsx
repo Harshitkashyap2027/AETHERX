@@ -7,6 +7,7 @@ import Avatar from '../common/Avatar';
 const pageTitles = {
   '/': 'Home',
   '/explore': 'Explore',
+  '/stories': 'Stories',
   '/projects': 'Projects',
   '/chat': 'Messages',
   '/notifications': 'Notifications',

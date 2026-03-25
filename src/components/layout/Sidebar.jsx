@@ -10,6 +10,7 @@ import {
   IoPersonOutline, IoPerson,
   IoLogOutOutline,
   IoShieldOutline,
+  IoBookOutline, IoBook,
 } from 'react-icons/io5';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -18,6 +19,7 @@ import Avatar from '../common/Avatar';
 const navItems = [
   { to: '/', label: 'Home', Icon: IoHomeOutline, ActiveIcon: IoHome, exact: true },
   { to: '/explore', label: 'Explore', Icon: IoCompassOutline, ActiveIcon: IoCompass },
+  { to: '/stories', label: 'Stories', Icon: IoBookOutline, ActiveIcon: IoBook },
   { to: '/projects', label: 'Projects', Icon: IoFolderOpenOutline, ActiveIcon: IoFolderOpen },
   { to: '/chat', label: 'Chat', Icon: IoChatbubbleOutline, ActiveIcon: IoChatbubble },
   { to: '/notifications', label: 'Alerts', Icon: IoNotificationsOutline, ActiveIcon: IoNotifications },
