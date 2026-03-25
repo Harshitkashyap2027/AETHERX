@@ -72,7 +72,60 @@ export const AuthProvider = ({ children }) => {
     return cred;
   };
 
-  const googleLogin = () => signInWithPopup(auth, new GoogleAuthProvider());
+  const googleLogin = async () => {
+    const result = await signInWithPopup(auth, new GoogleAuthProvider());
+    const firebaseUser = result.user;
+    const userSnap = await getDoc(doc(db, 'users', firebaseUser.uid));
+    if (!userSnap.exists()) {
+      const MIN_USERNAME_LENGTH = 3;
+      const MAX_USERNAME_ATTEMPTS = 10;
+
+      // Derive a base username from the Google email prefix, keeping only valid characters
+      let base = (firebaseUser.email?.split('@')[0] || 'user')
+        .toLowerCase()
+        .replace(/[^a-z0-9_]/g, '');
+      if (base.length < MIN_USERNAME_LENGTH) base = (base + 'user').slice(0, 15);
+
+      // Find a unique username by appending a counter if necessary
+      let username = base;
+      let counter = 1;
+      while (
+        counter <= MAX_USERNAME_ATTEMPTS &&
+        (await getDoc(doc(db, 'usernames', username))).exists()
+      ) {
+        username = `${base}${counter}`;
+        counter += 1;
+      }
+
+      const data = {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        username,
+        displayName: firebaseUser.displayName || username,
+        bio: '',
+        photoURL: firebaseUser.photoURL || '',
+        coverURL: '',
+        skills: [],
+        techStack: [],
+        interests: [],
+        followers: [],
+        following: [],
+        followRequests: [],
+        isPrivate: false,
+        isVerified: false,
+        role: 'user',
+        postCount: 0,
+        projectCount: 0,
+        onboardingDone: false,
+        createdAt: serverTimestamp(),
+      };
+
+      await setDoc(doc(db, 'users', firebaseUser.uid), data);
+      await setDoc(doc(db, 'usernames', username), { uid: firebaseUser.uid });
+      setUserProfile(data);
+    }
+    return result;
+  };
 
   const logout = () => signOut(auth);
 
