@@ -5,12 +5,13 @@ import {
   IoFolderOpenOutline, IoFolderOpen,
   IoChatbubbleOutline, IoChatbubble,
   IoPersonOutline, IoPerson,
+  IoBookOutline, IoBook,
 } from 'react-icons/io5';
 
 const tabs = [
   { to: '/', Icon: IoHomeOutline, ActiveIcon: IoHome, label: 'Home', exact: true },
   { to: '/explore', Icon: IoCompassOutline, ActiveIcon: IoCompass, label: 'Explore' },
-  { to: '/projects', Icon: IoFolderOpenOutline, ActiveIcon: IoFolderOpen, label: 'Projects' },
+  { to: '/stories', Icon: IoBookOutline, ActiveIcon: IoBook, label: 'Stories' },
   { to: '/chat', Icon: IoChatbubbleOutline, ActiveIcon: IoChatbubble, label: 'Chat' },
   { to: '/profile', Icon: IoPersonOutline, ActiveIcon: IoPerson, label: 'Profile' },
 ];

@@ -17,6 +17,7 @@ import Notifications from './pages/Notifications';
 import Dashboard from './pages/Dashboard';
 import AdminPanel from './pages/AdminPanel';
 import Explore from './pages/Explore';
+import Stories from './pages/Stories';
 
 const ProtectedRoute = ({ children }) => {
   const { user, userProfile } = useAuth();
@@ -48,6 +49,7 @@ const AppRoutes = () => (
     <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
       <Route index element={<Home />} />
       <Route path="explore" element={<Explore />} />
+      <Route path="stories" element={<Stories />} />
       <Route path="profile" element={<Profile />} />
       <Route path="profile/:username" element={<Profile />} />
       <Route path="projects" element={<Projects />} />
