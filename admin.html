@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#d97706" />
+  <title>AETHERX – Admin Panel</title>
+  <style>
+    /* ─── Reset ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: #0A0A0F;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+    }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #12121A; }
+    ::-webkit-scrollbar-thumb { background: #d97706; border-radius: 2px; }
+
+    /* ─── Sidebar ────────────────────────────────────────────── */
+    #sidebar {
+      position: fixed; left: 0; top: 0; height: 100vh; width: 240px;
+      background: rgba(14, 14, 22, 0.95);
+      backdrop-filter: blur(20px);
+      border-right: 1px solid rgba(251,191,36,0.1);
+      display: flex; flex-direction: column;
+      z-index: 30;
+      transition: transform 0.3s;
+    }
+
+    .sidebar-logo {
+      padding: 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .sidebar-logo .logo-row {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+    }
+    .sidebar-logo .logo-icon { font-size: 18px; }
+    .sidebar-logo .logo-name {
+      font-weight: 700; font-size: 15px;
+      background: linear-gradient(135deg, #fbbf24, #ef4444);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .sidebar-logo .logo-sub { font-size: 11px; color: rgba(255,255,255,0.3); }
+
+    nav { flex: 1; padding: 12px; overflow-y: auto; }
+    .nav-btn {
+      width: 100%; display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 10px;
+      background: none; border: none; color: rgba(255,255,255,0.5);
+      cursor: pointer; font-size: 14px; font-weight: 500;
+      text-align: left; transition: all 0.2s;
+      margin-bottom: 2px;
+    }
+    .nav-btn:hover { color: #fff; background: rgba(255,255,255,0.06); }
+    .nav-btn.active {
+      background: linear-gradient(135deg, rgba(217,119,6,0.25), rgba(239,68,68,0.15));
+      color: #fbbf24;
+    }
+    .nav-btn .icon { font-size: 16px; }
+
+    .sidebar-footer {
+      padding: 16px; border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .admin-info {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+    }
+    .admin-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: linear-gradient(135deg, #d97706, #ef4444);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; flex-shrink: 0;
+      overflow: hidden;
+    }
+    .admin-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .admin-details { min-width: 0; }
+    .admin-name { font-size: 13px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .admin-role { font-size: 11px; color: #fbbf24; }
+
+    .btn-back, .btn-logout {
+      width: 100%; padding: 8px 12px; border-radius: 10px;
+      font-size: 13px; font-weight: 500; cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+      border: none; transition: all 0.2s;
+      margin-bottom: 4px;
+    }
+    .btn-back { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.5); }
+    .btn-back:hover { background: rgba(255,255,255,0.09); color: #fff; }
+    .btn-logout { background: rgba(239,68,68,0.1); color: #fca5a5; }
+    .btn-logout:hover { background: rgba(239,68,68,0.18); }
+
+    /* ─── Mobile header ──────────────────────────────────────── */
+    #mobileHeader {
+      display: none;
+      position: fixed; top: 0; left: 0; right: 0; height: 56px;
+      background: rgba(14,14,22,0.95);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(251,191,36,0.1);
+      padding: 0 16px;
+      align-items: center; justify-content: space-between;
+      z-index: 20;
+    }
+    .mobile-logo { font-weight: 700; font-size: 15px; color: #fbbf24; }
+    #menuToggle {
+      background: none; border: none; color: #fff;
+      font-size: 24px; cursor: pointer; padding: 4px;
+    }
+
+    /* ─── Main content ───────────────────────────────────────── */
+    #main {
+      margin-left: 240px;
+      flex: 1;
+      padding: 28px;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    /* Background orbs */
+    .orb { position: fixed; border-radius: 50%; filter: blur(90px); pointer-events: none; z-index: 0; }
+    .orb-a { background: rgba(217,119,6,0.1); width: 400px; height: 400px; top: -100px; right: 0; }
+    .orb-b { background: rgba(239,68,68,0.07); width: 350px; height: 350px; bottom: -80px; left: 200px; }
+
+    /* ─── Stat cards ─────────────────────────────────────────── */
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: rgba(18,18,26,0.9);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px; padding: 20px;
+      transition: all 0.3s;
+      position: relative; z-index: 1;
+    }
+    .stat-card:hover { border-color: rgba(251,191,36,0.25); transform: translateY(-2px); }
+    .stat-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; margin-bottom: 12px;
+    }
+    .stat-value { font-size: 2rem; font-weight: 800; }
+    .stat-label { font-size: 13px; color: rgba(255,255,255,0.45); margin-top: 4px; }
+
+    /* ─── Sections ───────────────────────────────────────────── */
+    .section { display: none; position: relative; z-index: 1; }
+    .section.active { display: block; }
+    .section-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 18px; }
+
+    /* ─── Table card ─────────────────────────────────────────── */
+    .table-card {
+      background: rgba(18,18,26,0.9);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px; overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    thead tr { border-bottom: 1px solid rgba(255,255,255,0.06); }
+    th { padding: 12px 16px; text-align: left; color: rgba(255,255,255,0.4); font-size: 12px; font-weight: 500; }
+    tbody tr { border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.15s; }
+    tbody tr:last-child { border: none; }
+    tbody tr:hover { background: rgba(255,255,255,0.025); }
+    td { padding: 12px 16px; vertical-align: middle; }
+
+    .user-cell { display: flex; align-items: center; gap: 10px; }
+    .user-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: linear-gradient(135deg, #6C63FF, #FF6584);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; flex-shrink: 0; overflow: hidden;
+    }
+    .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .user-name { font-size: 14px; color: #fff; }
+    .user-handle { font-size: 12px; color: rgba(255,255,255,0.4); }
+
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 20px;
+      font-size: 11px; font-weight: 500;
+    }
+    .badge-active  { background: rgba(34,197,94,0.15); color: #4ade80; }
+    .badge-banned  { background: rgba(239,68,68,0.15); color: #f87171; }
+    .badge-admin   { background: rgba(251,191,36,0.15); color: #fbbf24; }
+    .badge-mod     { background: rgba(168,85,247,0.15); color: #c084fc; }
+    .badge-super   { background: rgba(239,68,68,0.15); color: #f87171; }
+    .badge-user    { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); }
+
+    select.role-select {
+      background: transparent; border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; padding: 4px 8px; color: #fff;
+      font-size: 12px; cursor: pointer; outline: none;
+    }
+    select.role-select option { background: #12121A; }
+    select.role-select:focus { border-color: #d97706; }
+
+    .action-btn {
+      background: none; border: none; cursor: pointer;
+      padding: 6px; border-radius: 8px; font-size: 15px;
+      transition: all 0.15s; color: rgba(255,255,255,0.5);
+    }
+    .action-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .action-btn.ban   { color: #f87171; }
+    .action-btn.ban:hover { background: rgba(239,68,68,0.12); }
+    .action-btn.unban { color: #4ade80; }
+    .action-btn.unban:hover { background: rgba(34,197,94,0.12); }
+    .action-btn.del   { color: #f87171; }
+    .action-btn.del:hover { background: rgba(239,68,68,0.12); }
+    .action-btn.resolve { color: #4ade80; }
+    .action-btn.resolve:hover { background: rgba(34,197,94,0.1); }
+
+    /* ─── Empty state ────────────────────────────────────────── */
+    .empty-state {
+      text-align: center; padding: 60px 20px;
+      background: rgba(18,18,26,0.9);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+    }
+    .empty-icon { font-size: 42px; margin-bottom: 12px; }
+    .empty-text { color: rgba(255,255,255,0.35); font-size: 14px; }
+
+    /* ─── Hover row (replaces inline onmouseover/onmouseout) ── */
+    .hover-row { transition: background 0.15s; cursor: default; }
+    .hover-row:hover { background: rgba(255,255,255,.04); }
+    #loadingOverlay {
+      position: fixed; inset: 0; background: #0A0A0F;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 100;
+      gap: 16px;
+    }
+    .spinner {
+      width: 44px; height: 44px; border-radius: 50%;
+      border: 3px solid rgba(217,119,6,0.2);
+      border-top-color: #d97706;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loadingOverlay p { color: rgba(255,255,255,0.4); font-size: 14px; }
+
+    /* ─── Auth gate ──────────────────────────────────────────── */
+    #authGate {
+      display: none;
+      position: fixed; inset: 0; background: #0A0A0F;
+      align-items: center; justify-content: center;
+      z-index: 200; text-align: center;
+    }
+    .auth-gate-card {
+      background: rgba(18,18,26,0.9);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 20px; padding: 40px 32px;
+      max-width: 380px;
+    }
+    .auth-gate-card .icon { font-size: 48px; margin-bottom: 16px; }
+    .auth-gate-card h2 { margin-bottom: 8px; font-size: 1.25rem; }
+    .auth-gate-card p { color: rgba(255,255,255,0.4); font-size: 14px; margin-bottom: 20px; }
+    .btn-goto-login {
+      display: inline-block; padding: 10px 24px;
+      background: linear-gradient(135deg, #d97706, #ef4444);
+      border-radius: 10px; color: #fff; font-weight: 600;
+      text-decoration: none; font-size: 14px;
+      transition: opacity 0.2s;
+    }
+    .btn-goto-login:hover { opacity: 0.88; }
+
+    /* ─── Toast ─────────────────────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #12121A; border: 1px solid rgba(255,255,255,0.1);
+      color: #fff; padding: 12px 20px; border-radius: 14px;
+      font-size: 14px; z-index: 9999;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s;
+      white-space: nowrap;
+    }
+    #toast.show   { opacity: 1; }
+    #toast.error  { border-color: rgba(239,68,68,0.5); color: #fca5a5; }
+    #toast.success { border-color: rgba(251,191,36,0.5); color: #fbbf24; }
+
+    /* ─── Responsive ─────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      #sidebar { transform: translateX(-100%); }
+      #sidebar.open { transform: translateX(0); }
+      #main { margin-left: 0; padding: 72px 16px 24px; }
+      #mobileHeader { display: flex; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 480px) {
+      .stats-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background orbs -->
+  <div class="orb orb-a"></div>
+  <div class="orb orb-b"></div>
+
+  <!-- Loading overlay -->
+  <div id="loadingOverlay">
+    <div class="spinner"></div>
+    <p>Loading admin panel…</p>
+  </div>
+
+  <!-- Auth gate (shown if not an admin) -->
+  <div id="authGate">
+    <div class="auth-gate-card">
+      <div class="icon">🚫</div>
+      <h2>Access Denied</h2>
+      <p>You need admin privileges to view this page.</p>
+      <a href="admin-login.html" class="btn-goto-login">Go to Admin Login</a>
+    </div>
+  </div>
+
+  <!-- Mobile header -->
+  <div id="mobileHeader">
+    <span class="mobile-logo">🛡️ Admin Panel</span>
+    <button id="menuToggle" aria-label="Toggle menu">☰</button>
+  </div>
+
+  <!-- Sidebar -->
+  <aside id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-row">
+        <span class="logo-icon">🛡️</span>
+        <span class="logo-name">Admin Panel</span>
+      </div>
+      <div class="logo-sub">AETHERX Control Tower</div>
+    </div>
+
+    <nav>
+      <button class="nav-btn active" data-tab="overview"><span class="icon">📊</span> Overview</button>
+      <button class="nav-btn" data-tab="users"><span class="icon">👥</span> Users</button>
+      <button class="nav-btn" data-tab="posts"><span class="icon">📄</span> Posts</button>
+      <button class="nav-btn" data-tab="projects"><span class="icon">📁</span> Projects</button>
+      <button class="nav-btn" data-tab="reports"><span class="icon">🚩</span> Reports</button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="admin-info">
+        <div class="admin-avatar" id="adminAvatar">A</div>
+        <div class="admin-details">
+          <div class="admin-name" id="adminName">Administrator</div>
+          <div class="admin-role" id="adminRole">admin</div>
+        </div>
+      </div>
+      <button class="btn-back" onclick="window.location.href='index.html'">↩ Back to App</button>
+      <button class="btn-logout" id="logoutBtn">🚪 Sign Out</button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main id="main">
+
+    <!-- OVERVIEW -->
+    <div class="section active" id="tab-overview">
+      <div class="section-title">Mission Control 🚀</div>
+
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(99,102,241,0.15)">👥</div>
+          <div class="stat-value" id="statUsers">—</div>
+          <div class="stat-label">Total Users</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(168,85,247,0.15)">📄</div>
+          <div class="stat-value" id="statPosts">—</div>
+          <div class="stat-label">Total Posts</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(34,197,94,0.15)">📁</div>
+          <div class="stat-value" id="statProjects">—</div>
+          <div class="stat-label">Projects</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(239,68,68,0.15)">🚩</div>
+          <div class="stat-value" id="statReports">—</div>
+          <div class="stat-label">Reports</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" id="overviewGrid">
+        <div class="table-card" style="padding:20px;">
+          <div style="font-weight:600;margin-bottom:14px;">Recent Users</div>
+          <div id="recentUsers"><p style="color:rgba(255,255,255,.3);font-size:13px;">Loading…</p></div>
+        </div>
+        <div class="table-card" style="padding:20px;">
+          <div style="font-weight:600;margin-bottom:14px;">Recent Posts</div>
+          <div id="recentPosts"><p style="color:rgba(255,255,255,.3);font-size:13px;">Loading…</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div class="section" id="tab-users">
+      <div class="section-title">User Management</div>
+      <div class="table-card">
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr>
+              <th>User</th><th>Role</th><th>Status</th><th style="text-align:right">Actions</th>
+            </tr></thead>
+            <tbody id="usersTable"><tr><td colspan="4" style="text-align:center;padding:40px;color:rgba(255,255,255,.3)">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- POSTS -->
+    <div class="section" id="tab-posts">
+      <div class="section-title">Content Moderation – Posts</div>
+      <div class="table-card">
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr>
+              <th>Post</th><th>Author</th><th>Likes</th><th style="text-align:right">Actions</th>
+            </tr></thead>
+            <tbody id="postsTable"><tr><td colspan="4" style="text-align:center;padding:40px;color:rgba(255,255,255,.3)">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROJECTS -->
+    <div class="section" id="tab-projects">
+      <div class="section-title">Projects Management</div>
+      <div id="projectsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;"></div>
+    </div>
+
+    <!-- REPORTS -->
+    <div class="section" id="tab-reports">
+      <div class="section-title">Reports</div>
+      <div id="reportsList"></div>
+    </div>
+
+  </main>
+
+  <div id="toast"></div>
+
+  <!-- Firebase CDN (compat v9) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+
+  <script>
+    // ─── State ───────────────────────────────────────────────
+    const ADMIN_ROLES = new Set(['admin', 'super_admin', 'moderator']);
+    let adminProfile = null;
+    let allData = { users: [], posts: [], projects: [], reports: [] };
+
+    // ─── Toast ────────────────────────────────────────────────
+    function showToast(msg, type = 'error') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'show ' + type;
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => { t.className = ''; }, 3500);
+    }
+
+    // ─── Tab navigation ──────────────────────────────────────
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+        // Close mobile sidebar
+        document.getElementById('sidebar').classList.remove('open');
+      });
+    });
+
+    // ─── Mobile menu toggle ──────────────────────────────────
+    document.getElementById('menuToggle').addEventListener('click', () => {
+      document.getElementById('sidebar').classList.toggle('open');
+    });
+
+    // ─── Logout ──────────────────────────────────────────────
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await auth.signOut();
+      window.location.href = 'admin-login.html';
+    });
+
+    // ─── Avatar helper ────────────────────────────────────────
+    function avatarHtml(photoURL, name, size = 34) {
+      const letter = (name || '?')[0].toUpperCase();
+      if (photoURL) {
+        return `<div class="user-avatar" style="width:${size}px;height:${size}px"><img src="${photoURL}" alt="" onerror="this.style.display='none'"/></div>`;
+      }
+      return `<div class="user-avatar" style="width:${size}px;height:${size}px">${letter}</div>`;
+    }
+
+    function roleBadge(role) {
+      const map = { admin: 'badge-admin', super_admin: 'badge-super', moderator: 'badge-mod', user: 'badge-user' };
+      return `<span class="badge ${map[role] || 'badge-user'}">${role || 'user'}</span>`;
+    }
+
+    // ─── Fetch all data ───────────────────────────────────────
+    async function fetchAll() {
+      try {
+        const [uSnap, pSnap, prSnap, rSnap] = await Promise.all([
+          db.collection('users').orderBy('createdAt', 'desc').limit(50).get(),
+          db.collection('posts').orderBy('createdAt', 'desc').limit(50).get(),
+          db.collection('projects').orderBy('createdAt', 'desc').limit(50).get(),
+          db.collection('reports').orderBy('createdAt', 'desc').limit(50).get(),
+        ]);
+        allData.users    = uSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        allData.posts    = pSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        allData.projects = prSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        allData.reports  = rSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        // Stats
+        document.getElementById('statUsers').textContent    = allData.users.length;
+        document.getElementById('statPosts').textContent    = allData.posts.length;
+        document.getElementById('statProjects').textContent = allData.projects.length;
+        document.getElementById('statReports').textContent  = allData.reports.length;
+
+        renderOverview();
+        renderUsers();
+        renderPosts();
+        renderProjects();
+        renderReports();
+      } catch (e) {
+        showToast('Failed to load data: ' + e.message);
+      }
+    }
+
+    // ─── Text sanitizer (prevents XSS from user data) ────────
+    function esc(str) {
+      if (str == null) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // ─── Overview ─────────────────────────────────────────────
+    function renderOverview() {
+      // Recent users
+      const ru = document.getElementById('recentUsers');
+      ru.innerHTML = allData.users.slice(0, 5).map(u => `
+        <div class="hover-row" style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;">
+          ${avatarHtml(u.photoURL, u.displayName, 32)}
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(u.displayName) || '—'}</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.4)">@${esc(u.username) || '—'}</div>
+          </div>
+          ${roleBadge(u.role)}
+        </div>
+      `).join('') || '<p style="color:rgba(255,255,255,.3);font-size:13px">No users yet</p>';
+
+      // Recent posts
+      const rp = document.getElementById('recentPosts');
+      rp.innerHTML = allData.posts.slice(0, 5).map(p => `
+        <div class="hover-row" style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;">
+          ${p.mediaUrl ? `<img src="${esc(p.mediaUrl)}" style="width:36px;height:36px;border-radius:8px;object-fit:cover;flex-shrink:0" />` : '<div style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,.06);flex-shrink:0"></div>'}
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.caption) || '—'}</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.4)">❤️ ${(p.likes || []).length} · @${esc(p.userUsername) || '?'}</div>
+          </div>
+        </div>
+      `).join('') || '<p style="color:rgba(255,255,255,.3);font-size:13px">No posts yet</p>';
+    }
+
+    // ─── Users table ──────────────────────────────────────────
+    function renderUsers() {
+      const tbody = document.getElementById('usersTable');
+      if (!allData.users.length) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:40px;color:rgba(255,255,255,.3)">No users found</td></tr>';
+        return;
+      }
+      tbody.innerHTML = allData.users.map(u => `
+        <tr>
+          <td>
+            <div class="user-cell">
+              ${avatarHtml(u.photoURL, u.displayName)}
+              <div>
+                <div class="user-name">${esc(u.displayName) || '—'}</div>
+                <div class="user-handle">@${esc(u.username) || '—'}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <select class="role-select" data-action="change-role" data-uid="${esc(u.id)}">
+              <option value="user"        ${(u.role||'user')==='user'        ? 'selected' : ''}>User</option>
+              <option value="moderator"   ${u.role==='moderator'             ? 'selected' : ''}>Moderator</option>
+              <option value="admin"       ${u.role==='admin'                 ? 'selected' : ''}>Admin</option>
+              <option value="super_admin" ${u.role==='super_admin'           ? 'selected' : ''}>Super Admin</option>
+            </select>
+          </td>
+          <td>
+            <span class="badge ${u.isBanned ? 'badge-banned' : 'badge-active'}">
+              ${u.isBanned ? 'Banned' : 'Active'}
+            </span>
+          </td>
+          <td style="text-align:right">
+            <button class="action-btn ${u.isBanned ? 'unban' : 'ban'}"
+              data-action="toggle-ban"
+              data-uid="${esc(u.id)}"
+              data-banned="${u.isBanned ? '1' : '0'}"
+              title="${u.isBanned ? 'Unban user' : 'Ban user'}">
+              ${u.isBanned ? '✅' : '🚫'}
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // ─── Posts table ──────────────────────────────────────────
+    function renderPosts() {
+      const tbody = document.getElementById('postsTable');
+      if (!allData.posts.length) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:40px;color:rgba(255,255,255,.3)">No posts found</td></tr>';
+        return;
+      }
+      tbody.innerHTML = allData.posts.map(p => `
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px;">
+              ${p.mediaUrl ? `<img src="${esc(p.mediaUrl)}" style="width:40px;height:40px;border-radius:8px;object-fit:cover;flex-shrink:0" />` : ''}
+              <span style="font-size:13px;color:rgba(255,255,255,.8);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.caption) || '—'}</span>
+            </div>
+          </td>
+          <td style="color:rgba(255,255,255,.5);font-size:13px">@${esc(p.userUsername) || '?'}</td>
+          <td style="color:rgba(255,255,255,.5);font-size:13px">${(p.likes || []).length}</td>
+          <td style="text-align:right">
+            <button class="action-btn del" data-action="delete-post" data-id="${esc(p.id)}" title="Delete post">🗑️</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // ─── Projects grid ────────────────────────────────────────
+    function renderProjects() {
+      const grid = document.getElementById('projectsGrid');
+      if (!allData.projects.length) {
+        grid.innerHTML = `<div class="empty-state"><div class="empty-icon">📁</div><div class="empty-text">No projects found</div></div>`;
+        return;
+      }
+      grid.innerHTML = allData.projects.map(p => `
+        <div class="table-card" style="overflow:hidden">
+          ${p.previewUrl ? `<img src="${esc(p.previewUrl)}" style="width:100%;height:110px;object-fit:cover" />` : ''}
+          <div style="padding:16px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+              <div>
+                <div style="font-weight:600;font-size:14px">${esc(p.title) || '—'}</div>
+                <div style="font-size:12px;color:rgba(255,255,255,.4)">@${esc(p.ownerUsername) || '?'}</div>
+              </div>
+              <button class="action-btn del" data-action="delete-project" data-id="${esc(p.id)}" title="Delete project">🗑️</button>
+            </div>
+            <span class="badge ${p.isPublic ? 'badge-active' : 'badge-banned'}" style="margin-top:8px;display:inline-block">
+              ${p.isPublic ? 'Public' : 'Private'}
+            </span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ─── Reports list ─────────────────────────────────────────
+    function renderReports() {
+      const list = document.getElementById('reportsList');
+      if (!allData.reports.length) {
+        list.innerHTML = `<div class="empty-state"><div class="empty-icon">🚩</div><div class="empty-text">No reports</div></div>`;
+        return;
+      }
+      list.innerHTML = `<div class="table-card">` + allData.reports.map(r => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.04)">
+          <div>
+            <div style="font-size:14px">${esc(r.reason) || 'No reason given'}</div>
+            <div style="font-size:12px;color:rgba(255,255,255,.4);margin-top:4px">
+              Type: ${esc(r.type) || '—'} ·
+              Status: <span style="color:${r.status === 'resolved' ? '#4ade80' : '#fbbf24'}">${esc(r.status) || 'pending'}</span>
+            </div>
+          </div>
+          ${r.status !== 'resolved' ? `
+            <button class="action-btn resolve" data-action="resolve-report" data-id="${esc(r.id)}" title="Resolve report">✅ Resolve</button>
+          ` : ''}
+        </div>
+      `).join('') + `</div>`;
+    }
+
+    // ─── Event delegation for all admin actions ───────────────
+    document.getElementById('main').addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const action = btn.dataset.action;
+
+      if (action === 'toggle-ban') {
+        await toggleBan(btn.dataset.uid, btn.dataset.banned === '1');
+      } else if (action === 'delete-post') {
+        await deletePost(btn.dataset.id);
+      } else if (action === 'delete-project') {
+        await deleteProject(btn.dataset.id);
+      } else if (action === 'resolve-report') {
+        await resolveReport(btn.dataset.id);
+      }
+    });
+
+    document.getElementById('main').addEventListener('change', async (e) => {
+      const sel = e.target.closest('[data-action="change-role"]');
+      if (!sel) return;
+      await changeRole(sel.dataset.uid, sel.value);
+    });
+
+    // ─── Admin actions ────────────────────────────────────────
+
+    async function toggleBan(userId, isBanned) {
+      try {
+        await db.collection('users').doc(userId).update({ isBanned: !isBanned });
+        // Log action
+        await db.collection('logs').add({
+          action: isBanned ? 'UNBAN_USER' : 'BAN_USER',
+          adminId: adminProfile?.uid,
+          targetUserId: userId,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        });
+        // Update local state
+        const u = allData.users.find(u => u.id === userId);
+        if (u) u.isBanned = !isBanned;
+        renderUsers();
+        showToast(isBanned ? 'User unbanned' : 'User banned', 'success');
+      } catch (e) {
+        showToast('Action failed: ' + e.message);
+      }
+    }
+
+    async function changeRole(userId, newRole) {
+      try {
+        await db.collection('users').doc(userId).update({ role: newRole });
+        await db.collection('logs').add({
+          action: 'CHANGE_ROLE',
+          adminId: adminProfile?.uid,
+          targetUserId: userId,
+          newRole,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        });
+        const u = allData.users.find(u => u.id === userId);
+        if (u) u.role = newRole;
+        showToast('Role changed to ' + newRole, 'success');
+      } catch (e) {
+        showToast('Failed to change role: ' + e.message);
+      }
+    }
+
+    async function deletePost(postId) {
+      if (!confirm('Delete this post? This cannot be undone.')) return;
+      try {
+        await db.collection('posts').doc(postId).delete();
+        await db.collection('logs').add({
+          action: 'DELETE_POST',
+          adminId: adminProfile?.uid,
+          postId,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        });
+        allData.posts = allData.posts.filter(p => p.id !== postId);
+        renderPosts();
+        document.getElementById('statPosts').textContent = allData.posts.length;
+        showToast('Post deleted', 'success');
+      } catch (e) {
+        showToast('Failed to delete post: ' + e.message);
+      }
+    }
+
+    async function deleteProject(projId) {
+      if (!confirm('Delete this project? This cannot be undone.')) return;
+      try {
+        await db.collection('projects').doc(projId).delete();
+        allData.projects = allData.projects.filter(p => p.id !== projId);
+        renderProjects();
+        document.getElementById('statProjects').textContent = allData.projects.length;
+        showToast('Project deleted', 'success');
+      } catch (e) {
+        showToast('Failed: ' + e.message);
+      }
+    }
+
+    async function resolveReport(reportId) {
+      try {
+        await db.collection('reports').doc(reportId).update({ status: 'resolved' });
+        const r = allData.reports.find(r => r.id === reportId);
+        if (r) r.status = 'resolved';
+        renderReports();
+        showToast('Report resolved', 'success');
+      } catch (e) {
+        showToast('Failed: ' + e.message);
+      }
+    }
+
+    // ─── Auth guard ───────────────────────────────────────────
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        document.getElementById('loadingOverlay').style.display = 'none';
+        document.getElementById('authGate').style.display = 'flex';
+        return;
+      }
+
+      try {
+        const snap = await db.collection('users').doc(user.uid).get();
+        if (!snap.exists || !ADMIN_ROLES.has(snap.data().role) || snap.data().isBanned) {
+          await auth.signOut();
+          document.getElementById('loadingOverlay').style.display = 'none';
+          document.getElementById('authGate').style.display = 'flex';
+          return;
+        }
+
+        adminProfile = { uid: user.uid, ...snap.data() };
+
+        // Update sidebar admin info
+        document.getElementById('adminName').textContent = adminProfile.displayName || user.email;
+        document.getElementById('adminRole').textContent = adminProfile.role;
+        const avatarEl = document.getElementById('adminAvatar');
+        if (adminProfile.photoURL) {
+          avatarEl.innerHTML = `<img src="${adminProfile.photoURL}" alt="" />`;
+        } else {
+          avatarEl.textContent = (adminProfile.displayName || 'A')[0].toUpperCase();
+        }
+
+        // Load data and render
+        await fetchAll();
+
+      } catch (e) {
+        showToast('Error loading panel: ' + e.message);
+      } finally {
+        document.getElementById('loadingOverlay').style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>
